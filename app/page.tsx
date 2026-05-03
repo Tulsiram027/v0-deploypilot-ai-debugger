@@ -38,76 +38,14 @@ export default function Home() {
     }
   }, [history])
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = () => {
     if (!errorLog.trim() || isAnalyzing) return
-
-    setIsAnalyzing(true)
-    setAnalysisResult('')
 
     const analysisId = Date.now().toString()
     setCurrentAnalysisId(analysisId)
 
-    try {
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', parts: [{ type: 'text', text: errorLog }], id: '1' }],
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Analysis failed')
-      }
-
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
-      }
-
-      const decoder = new TextDecoder()
-      let fullContent = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
-
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const data = line.slice(5).trim()
-            if (data === '[DONE]') continue
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.type === 'text-delta' && parsed.delta) {
-                fullContent += parsed.delta
-                setAnalysisResult(fullContent)
-              }
-            } catch {
-              // Skip invalid JSON
-            }
-          }
-        }
-      }
-
-      // Save to history
-      const newEntry: AnalysisHistory = {
-        id: analysisId,
-        errorPreview: errorLog.slice(0, 100),
-        timestamp: Date.now(),
-        messages: [
-          { role: 'user', content: errorLog },
-          { role: 'assistant', content: fullContent },
-        ],
-      }
-
-      setHistory((prev) => [newEntry, ...prev.filter((h) => h.id !== analysisId)].slice(0, 5))
-    } catch (error) {
-      console.error('[v0] Analysis error:', error)
-      // Fallback to mock response for demo purposes
-      const mockResponse = `## Root Cause
+    // Mock response for demo purposes
+    const mockResponse = `## Root Cause
 The error indicates a module resolution failure during the Next.js build process. The build system cannot locate the '@/components/ui/button' module, which typically happens due to missing files, incorrect import paths, or build cache issues.
 
 ## Exact Fix
@@ -121,23 +59,21 @@ If the file is missing, create it or verify the import path is correct.
 ## Prevention Tip
 Always run \`pnpm build\` locally before pushing to ensure all module imports resolve correctly. Consider adding pre-commit hooks to catch these errors early in the development workflow.`
 
-      setAnalysisResult(mockResponse)
+    // Immediately set the analysis result
+    setAnalysisResult(mockResponse)
 
-      // Save mock analysis to history
-      const newEntry: AnalysisHistory = {
-        id: analysisId,
-        errorPreview: errorLog.slice(0, 100),
-        timestamp: Date.now(),
-        messages: [
-          { role: 'user', content: errorLog },
-          { role: 'assistant', content: mockResponse },
-        ],
-      }
-
-      setHistory((prev) => [newEntry, ...prev.filter((h) => h.id !== analysisId)].slice(0, 5))
-    } finally {
-      setIsAnalyzing(false)
+    // Save to history
+    const newEntry: AnalysisHistory = {
+      id: analysisId,
+      errorPreview: errorLog.slice(0, 100),
+      timestamp: Date.now(),
+      messages: [
+        { role: 'user', content: errorLog },
+        { role: 'assistant', content: mockResponse },
+      ],
     }
+
+    setHistory((prev) => [newEntry, ...prev.filter((h) => h.id !== analysisId)].slice(0, 5))
   }
 
   const loadFromHistory = (entry: AnalysisHistory) => {
