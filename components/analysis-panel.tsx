@@ -28,6 +28,26 @@ function parseAnalysis(result: string) {
   return sections
 }
 
+function SkeletonLoader() {
+  return (
+    <Card className="border-border bg-card animate-pulse">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-medium">
+          <div className="h-8 w-8 rounded-lg bg-muted" />
+          <div className="h-4 w-32 bg-muted rounded" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="h-4 bg-muted rounded w-full" />
+          <div className="h-4 bg-muted rounded w-5/6" />
+          <div className="h-4 bg-muted rounded w-4/6" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function AnalysisCard({
   icon: Icon,
   title,
@@ -41,7 +61,7 @@ function AnalysisCard({
   delay: number
   accentColor: string
 }) {
-  if (!content) return null
+  if (!content) return <SkeletonLoader />
 
   return (
     <Card
@@ -110,6 +130,7 @@ function FormattedContent({ content }: { content: string }) {
 
 export function AnalysisPanel({ result, isStreaming }: AnalysisPanelProps) {
   const sections = useMemo(() => parseAnalysis(result), [result])
+  const hasContent = sections.rootCause || sections.exactFix || sections.preventionTip
 
   return (
     <section className="mb-8">
